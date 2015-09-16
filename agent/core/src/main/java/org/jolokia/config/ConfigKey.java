@@ -129,6 +129,13 @@ public enum ConfigKey {
     CALLBACK("callback", false, true),
 
     /**
+     * Propagates "status" attribute into HTTP response code.
+     * Disabled by default.
+     * @see <a href="https://github.com/jrevolt/jolokia/issues/1">jrevolt/jolokia-1</a>
+     */
+    PROPAGATE_STATUS_HTTP("propagateStatus", true, false, "false"),
+
+    /**
      * Mime Type to use for the response value. By default, this is
      * <code>text/plain</code>, but it could be useful to return
      * <code>application/json</code>, too. A request parameter overrides a global

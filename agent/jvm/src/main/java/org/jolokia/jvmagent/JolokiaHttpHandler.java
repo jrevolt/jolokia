@@ -41,6 +41,7 @@ import org.jolokia.http.HttpRequestHandler;
 import org.jolokia.restrictor.*;
 import org.jolokia.util.*;
 import org.json.simple.JSONAware;
+import org.json.simple.JSONObject;
 
 /**
  * HttpHandler for handling a jolokia request
@@ -71,6 +72,9 @@ public class JolokiaHttpHandler implements HttpHandler {
     // Respond for discovery mc requests
     private DiscoveryMulticastResponder discoveryMulticastResponder;
 
+    boolean isPropagateStatus;
+
+
     /**
      * Create a new HttpHandler for processing HTTP request
      *
@@ -93,6 +97,7 @@ public class JolokiaHttpHandler implements HttpHandler {
             context += "/";
         }
         logHandler = pLogHandler != null ? pLogHandler : createLogHandler(pConfig.get(ConfigKey.LOGHANDLER_CLASS), pConfig.get(ConfigKey.DEBUG));
+        isPropagateStatus = configuration.getAsBoolean(ConfigKey.PROPAGATE_STATUS_HTTP);
     }
 
     /**
@@ -305,7 +310,16 @@ public class JolokiaHttpHandler implements HttpHandler {
                 String callback = pParsedUri.getParameter(ConfigKey.CALLBACK.getKeyValue());
                 String content = callback == null ? json : callback + "(" + json + ");";
                 byte[] response = content.getBytes("UTF8");
-                pExchange.sendResponseHeaders(200,response.length);
+
+                // https://github.com/jrevolt/jolokia/issues/1
+                int status = 200;
+                if (isPropagateStatus) {
+                    Object o = pJson instanceof JSONObject ? ((JSONObject) pJson).get("status") : null;
+                    String s = o != null ? o.toString() : null;
+                    status = s != null ? Integer.parseInt(s) : 200;
+                }
+
+                pExchange.sendResponseHeaders(status,response.length);
                 out = pExchange.getResponseBody();
                 out.write(response);
             } else {
